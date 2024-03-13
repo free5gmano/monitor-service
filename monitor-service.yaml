@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: kafka
+subsets:
+  - addresses:
+      - ip: 10.20.1.22
+    ports:
+      - port: 9092
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9092
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitor
+  template:
+    metadata:
+      name: monitor
+      labels:
+        app: monitor
+    spec:
+      containers:
+        - name: monitor
+          image: monitor-service
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA_SERVER
+              value: kafka:9092
+            - name: KAFKA_TOPIC
+              value: test
+            - name: CONFIG_PATH
+              value: /workdir/config/config.ini
+            - name: KUBE_CONFIG
+              value: /workdir/config/config
+          volumeMounts:
+            - name: config
+              mountPath: /workdir/config/config.ini
+            - name: k8sconfig
+              mountPath: /workdir/config/config
+      volumes:
+        - name: config
+          hostPath:
+            path: /home/ubuntu/fang/oai-gnb/test/config.ini
+        - name: k8sconfig
+          hostPath:
+            path: /home/ubuntu/.kube/config
