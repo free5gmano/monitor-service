@@ -4,8 +4,8 @@ WORKDIR /workdir
 
 COPY requirements.txt .
 
-COPY test.py .
+COPY monitor-service.py .
 
 RUN pip install -r requirements.txt
 
-CMD ["python3", "test.py"]
+CMD ["python3", "monitor-service.py"]
