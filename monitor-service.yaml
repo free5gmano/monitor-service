@@ -4,7 +4,7 @@ metadata:
   name: kafka
 subsets:
   - addresses:
-      - ip: 10.20.1.22
+      - ip: 10.20.1.22 # change to your kafka server ip
     ports:
       - port: 9092
 
@@ -17,6 +17,30 @@ spec:
   type: ClusterIP
   ports:
     - port: 9092
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitor-config
+data:
+  config.ini: |
+    [POD]
+    LABEL=app=oai-gnb
+
+    [KAFKA]
+    SERVER=kafka:9092
+    USERNAME=test
+    PASSWORD=test
+    TOPIC=test
+    GROUP_ID=test
+
+    [DATABASE]
+    HOST=127.0.0.1
+    PORT=31000
+    USER=root
+    PASSWORD=1234
+    DB=gnb_info
 
 ---
 apiVersion: apps/v1
@@ -39,23 +63,19 @@ spec:
           image: monitor-service
           imagePullPolicy: IfNotPresent
           env:
-            - name: KAFKA_SERVER
-              value: kafka:9092
-            - name: KAFKA_TOPIC
-              value: test
             - name: CONFIG_PATH
               value: /workdir/config/config.ini
             - name: KUBE_CONFIG
               value: /workdir/config/config
           volumeMounts:
-            - name: config
-              mountPath: /workdir/config/config.ini
-            - name: k8sconfig
-              mountPath: /workdir/config/config
+            - mountPath: /workdir/config/config.ini
+              name: config
+            - mountPath: /workdir/config/config
+              name: k8sconfig
       volumes:
         - name: config
-          hostPath:
-            path: /home/ubuntu/fang/oai-gnb/test/config.ini
+          configMap:
+            name: monitor-config
         - name: k8sconfig
           hostPath:
-            path: /home/ubuntu/.kube/config
+            path: /home/ubuntu/.kube/config # change to your k8s config path
